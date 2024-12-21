@@ -28,7 +28,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.sdsmdg.tastytoast.TastyToast;
+import com.example.inputleap.R;
 
 import org.synergy.base.Event;
 import org.synergy.base.EventQueue;
@@ -79,40 +79,41 @@ public class Synergy extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        //setContentView(R.layout.main);
 
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         String clientName = preferences.getString(PROP_clientName, null);
         if (clientName != null) {
-            ((EditText) findViewById(R.id.clientNameEditText)).setText(clientName);
+            //((EditText) findViewById(R.id.clientNameEditText)).setText(clientName);
         }
         String serverHost = preferences.getString(PROP_serverHost, null);
         if (serverHost != null) {
-            ((EditText) findViewById(R.id.serverHostEditText)).setText(serverHost);
+            //((EditText) findViewById(R.id.serverHostEditText)).setText(serverHost);
         }
 
         // TODO make sure we have the appropriate permissions for the accessibility services. Otherwise display error/open settings intent
 
-        final Button connectButton = (Button) findViewById(R.id.connectButton);
+        //final Button connectButton = (Button) findViewById(R.id.connectButton);
         // connect when clicked on the connectButton
-        connectButton.setOnClickListener(new View.OnClickListener() {
+        //connectButton.setOnClickListener(
+        new View.OnClickListener() {
             public void onClick(View arg) {
                 connect();
 
             }
-        });
+        };
 
         Log.setLogLevel(Log.Level.DEBUG);
-        TastyToast.makeText(getApplicationContext(), "Client Starting", TastyToast.LENGTH_LONG, TastyToast.DEFAULT);
+        //TastyToast.makeText(getApplicationContext(), "Client Starting", TastyToast.LENGTH_LONG, TastyToast.DEFAULT);
         Log.debug("Client starting....");
     }
 
     private void connect() {
-        String clientName = ((EditText) findViewById(R.id.clientNameEditText)).getText().toString();
-        String ipAddress = ((EditText) findViewById(R.id.serverHostEditText)).getText().toString();
-        String portStr = ((EditText) findViewById(R.id.serverPortEditText)).getText().toString();
+        String clientName = "";// ((EditText) findViewById(R.id.clientNameEditText)).getText().toString();
+        String ipAddress = ""; //((EditText) findViewById(R.id.serverHostEditText)).getText().toString();
+        String portStr = ""; // ((EditText) findViewById(R.id.serverPortEditText)).getText().toString();
         int port = Integer.parseInt(portStr);
-        String deviceName = ((EditText) findViewById(R.id.inputDeviceEditText)).getText().toString();
+        String deviceName = ""; //((EditText) findViewById(R.id.inputDeviceEditText)).getText().toString();
 
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor preferencesEditor = preferences.edit();
@@ -141,7 +142,7 @@ public class Synergy extends Activity {
 
             Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
             new SynergyConnectTask().execute(client);
-            TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
+            //TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
 
             // TODO this looks quite hacky
             if (mainLoopThread == null) {
@@ -150,7 +151,7 @@ public class Synergy extends Activity {
             }
 
         } catch (Exception e) {
-            TastyToast.makeText(getApplicationContext(), "Connection Failed", TastyToast.LENGTH_LONG, TastyToast.ERROR);
+            //TastyToast.makeText(getApplicationContext(), "Connection Failed", TastyToast.LENGTH_LONG, TastyToast.ERROR);
             e.printStackTrace();
         }
     }
