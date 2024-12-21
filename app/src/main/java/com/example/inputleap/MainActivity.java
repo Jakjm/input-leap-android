@@ -13,10 +13,16 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import java.util.concurrent.Executor;
+
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.GestureDescription;
+import android.annotation.SuppressLint;
+import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
 import android.widget.Button;
 import androidx.activity.EdgeToEdge;
@@ -29,6 +35,8 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private View view;
 
     enum STATE {
             DISCONNECTED,
@@ -173,4 +181,54 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
     }
+
+    public void onMoveMouseClick(View view) {
+        this.view = view;
+        moveMouseInCircle();
+    }
+
+    private void moveMouseInCircle() {
+        AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+        if (accessibilityManager.isEnabled()) {
+            Path path = new Path();
+            int centerX = 500; // Center X coordinate
+            int centerY = 500; // Center Y coordinate
+            int radius = 100; // Radius of the circle
+
+            for (int i = 0; i <= 360; i += 10) {
+                double angle = Math.toRadians(i);
+                float x = (float) (centerX + radius * Math.cos(angle));
+                float y = (float) (centerY + radius * Math.sin(angle));
+                if (i == 0) {
+                    path.moveTo(x, y);
+                } else {
+                    path.lineTo(x, y);
+                }
+            }
+
+            GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+            gestureBuilder.addStroke(new GestureDescription.StrokeDescription(path, 0, 1000));
+            GestureDescription gesture = gestureBuilder.build();
+
+            dispatchGesture(gesture, new AccessibilityService.GestureResultCallback() {
+                @Override
+                public void onCompleted(GestureDescription gestureDescription) {
+                    super.onCompleted(gestureDescription);
+                    // Handle completion
+                }
+
+                @Override
+                public void onCancelled(GestureDescription gestureDescription) {
+                    super.onCancelled(gestureDescription);
+                    // Handle cancellation
+                }
+            }, null);
+        }
+    }
+
+    @SuppressLint("ServiceCast")
+    private void dispatchGesture(GestureDescription gesture, AccessibilityService.GestureResultCallback gestureResultCallback, Object o) {
+        ((AccessibilityService) getSystemService(ACCESSIBILITY_SERVICE)).dispatchGesture(gesture, gestureResultCallback, null);
+    }
+
 }
