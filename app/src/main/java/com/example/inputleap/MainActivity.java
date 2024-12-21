@@ -1,12 +1,9 @@
 package com.example.inputleap;
 
 import java.io.FileOutputStream;
-import java.net.SocketException;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,29 +13,31 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable;
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
-import java.util.concurrent.Executor;
+
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.GestureDescription;
+import android.annotation.SuppressLint;
+import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
-import android.util.Base64;
 import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
 import android.widget.Button;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -54,9 +53,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         YES,
         NO
     }
-
-    ;
     AtomicInteger state = new AtomicInteger(DISCONNECTED);
+    private View view;
+
     Socket socket;
     ExecutorService executorService = Executors.newFixedThreadPool(4);
     BufferedReader reader;
@@ -64,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //XML elements from screen....
     Button startClientBtn;
     TextInputEditText ipText;
+    TextInputEditText portText;
+    TextInputEditText clientNameText;
     EditText outputText;
 
     static {
@@ -72,7 +73,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     void loadElements(){
         startClientBtn = (Button)findViewById(R.id.start_client_button);
-        ipText = (TextInputEditText)findViewById(R.id.ip_text);
+        ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
+        clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
+        portText = (TextInputEditText)findViewById(R.id.port_EditText);
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
     }
     @Override
@@ -241,7 +244,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     try {
                         SSLContext sslContext = SSLContext.getInstance("TLS");
                         sslContext.init(null, new TrustManager[]{new TrustMgr()}, null);
-                        //SocketFactory sslFactory = SSLSocketFactory.getDefault();
                         SocketFactory sslFactory = sslContext.getSocketFactory();
 
                         socket = sslFactory.createSocket(ip, 24800);
@@ -256,6 +258,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     throw new RuntimeException(e);
                                 }
                                 state.set(CONNECTED);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        startClientBtn.setEnabled(true);
+                                    }
+                                });
                             }
                         });
                         sslSocket.startHandshake();
@@ -269,6 +277,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void disconnect(){
+        Runnable disconnectTask = new Runnable() {
+            public void run() {
+                try {
+                    Socket sslSocket = socket;
+                    socket = null;
+                    sslSocket.close();
+                    reader = null;
+                } catch (Exception e) {
+                    Exception x = e;
+                }
+            }
+        };
+        executorService.execute(disconnectTask);
 
     }
 
@@ -299,31 +320,92 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else if(status == CONNECTING){
             startClientBtn.setText("Connecting, please wait...");
+
         }
         else{
-            ipText.setEnabled(true);
-            startClientBtn.setText("Start InputLeap Client");
             startClientBtn.setEnabled(true);
+            ipText.setEnabled(true);
+            portText.setEnabled(true);
+            clientNameText.setEnabled(true);
+            startClientBtn.setText("Start InputLeap Client");
         }
     }
 
     @Override
     public void onClick(View v) {
-        startClientBtn.setEnabled(false);
-        ipText.setEnabled(false);
+        int status = state.get();
+        if(status == CONNECTED){
+            disconnect();
+            state.set(DISCONNECTED);
+        }
+        else {
+            startClientBtn.setEnabled(false);
+            ipText.setEnabled(false);
+            portText.setEnabled(false);
+            clientNameText.setEnabled(false);
 
-        Editable editable = ipText.getText();
-        if(editable != null) {
-            String ip = editable.toString();
-            if(validateIp(ip)) {
-                state.set(CONNECTING);
-                connect(ip);
-            }
-            else{
-                startClientBtn.setEnabled(true);
-                ipText.setEnabled(true);
-                //TODO complain that ip is incorrect with a dialog...
+            Editable editable = ipText.getText();
+            if (editable != null) {
+                String ip = editable.toString();
+                if (validateIp(ip)) {
+                    state.set(CONNECTING);
+                    connect(ip);
+                } else {
+                    startClientBtn.setEnabled(true);
+                    ipText.setEnabled(true);
+                    //TODO complain that ip is incorrect with a dialog...
+                }
             }
         }
     }
+
+    public void onMoveMouseClick(View view) {
+        this.view = view;
+        moveMouseInCircle();
+    }
+
+    private void moveMouseInCircle() {
+        AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+        if (accessibilityManager.isEnabled()) {
+            Path path = new Path();
+            int centerX = 500; // Center X coordinate
+            int centerY = 500; // Center Y coordinate
+            int radius = 100; // Radius of the circle
+
+            for (int i = 0; i <= 360; i += 10) {
+                double angle = Math.toRadians(i);
+                float x = (float) (centerX + radius * Math.cos(angle));
+                float y = (float) (centerY + radius * Math.sin(angle));
+                if (i == 0) {
+                    path.moveTo(x, y);
+                } else {
+                    path.lineTo(x, y);
+                }
+            }
+
+            GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+            gestureBuilder.addStroke(new GestureDescription.StrokeDescription(path, 0, 1000));
+            GestureDescription gesture = gestureBuilder.build();
+
+            dispatchGesture(gesture, new AccessibilityService.GestureResultCallback() {
+                @Override
+                public void onCompleted(GestureDescription gestureDescription) {
+                    super.onCompleted(gestureDescription);
+                    // Handle completion
+                }
+
+                @Override
+                public void onCancelled(GestureDescription gestureDescription) {
+                    super.onCancelled(gestureDescription);
+                    // Handle cancellation
+                }
+            }, null);
+        }
+    }
+
+    @SuppressLint("ServiceCast")
+    private void dispatchGesture(GestureDescription gesture, AccessibilityService.GestureResultCallback gestureResultCallback, Object o) {
+        ((AccessibilityService) getSystemService(ACCESSIBILITY_SERVICE)).dispatchGesture(gesture, gestureResultCallback, null);
+    }
+
 }

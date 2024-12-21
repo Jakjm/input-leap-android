@@ -13,17 +13,43 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <com.google.android.material.textfield.TextInputLayout
+
+        <TextView
+            android:id="@+id/client_name_label_TextView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:text="Client Name" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/ip_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="IP of Server" />
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/client_name_EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Client Name" />
 
-        </com.google.android.material.textfield.TextInputLayout>
+        <TextView
+            android:id="@+id/ip_label_TextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server IP/URL" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/ip_EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="IP of Server" />
+
+        <TextView
+            android:id="@+id/port_label_TextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server Port (Default = 24800)" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/port_EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="PortNumber"
+            android:text="24800" />
 
         <Button
             android:id="@+id/start_client_button"
@@ -32,15 +58,22 @@
             android:onClick="onClick"
             android:text="Start InputLeap Client" />
 
+        <Button
+            android:id="@+id/button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onMoveMouseClick"
+            android:text="Mouse Move In Circle" />
+
         <EditText
             android:id="@+id/editTextTextMultiLine"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:enabled="false"
             android:ems="10"
+            android:enabled="false"
             android:gravity="start|top"
             android:inputType="textMultiLine"
-            android:lines="18"
+            android:lines="5"
             android:singleLine="false" />
 
     </LinearLayout>
