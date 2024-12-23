@@ -20,9 +20,11 @@
 package org.synergy.net;
 
 
+import java.net.InetSocketAddress;
+
 public interface SocketInterface {
 
-    public void bind(final NetworkAddress address);
+    public void bind(final InetSocketAddress address);
 
     public void close();
 

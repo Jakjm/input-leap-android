@@ -28,10 +28,10 @@ import android.content.DialogInterface;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.Editable;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
@@ -44,7 +44,12 @@ import androidx.core.view.WindowInsetsCompat;
 import javax.net.ssl.*;
 import com.google.android.material.textfield.TextInputEditText;
 
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private final static String PROP_clientName = "clientNAME";
+    private final static String PROP_serverPort = "serverPORT";
+    private final static String PROP_serverURL = "serverURL";
     public static final int DISCONNECTED = 0;
     public static final int CONNECTING = 1;
     public static final int CONNECTED = 2;
@@ -71,12 +76,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         System.loadLibrary("inputleap");
     }
 
-    void loadElements(){
+    void loadElements(){ //Load elements of our activity....
         startClientBtn = (Button)findViewById(R.id.start_client_button);
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
+    }
+
+    void initElements(){ //Initialize elements of our activity with the correct text...
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        ipText.setText(preferences.getString(PROP_serverURL,""));
+        portText.setText(preferences.getString(PROP_serverPort, "24800"));
+        clientNameText.setText(preferences.getString(PROP_clientName, android.os.Build.MODEL));
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,11 +102,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
         loadElements();
-
+        initElements();
 
         final Handler handler = new Handler();
         Runnable runnable = new Runnable() {
-
             @Override
             public void run() {
                 try {
@@ -103,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // TODO: handle exception
                 } finally {
                     //also call the same runnable to call it at regular interval
-                    handler.postDelayed(this, 150);
+                    handler.postDelayed(this, 200);
                 }
             }
         };
@@ -138,9 +149,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-    public class TrustMgr implements X509TrustManager {
+    public class InputLeapTrustManager implements X509TrustManager {
         volatile RESULT result;
-        public TrustMgr(){
+        public InputLeapTrustManager(){
 
         }
         public void checkClientTrusted(X509Certificate[] chain, String authType) {
@@ -243,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if(state.get() == CONNECTING) {
                     try {
                         SSLContext sslContext = SSLContext.getInstance("TLS");
-                        sslContext.init(null, new TrustManager[]{new TrustMgr()}, null);
+                        sslContext.init(null, new TrustManager[]{new InputLeapTrustManager()}, null);
                         SocketFactory sslFactory = sslContext.getSocketFactory();
 
                         socket = sslFactory.createSocket(ip, 24800);
@@ -331,6 +342,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+
+    public void updatePreferences(String name, String url, String port){
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor preferencesEditor = preferences.edit();
+        preferencesEditor.putString(PROP_clientName, name);
+        preferencesEditor.putString(PROP_serverURL, url);
+        preferencesEditor.putString(PROP_serverPort, port);
+        preferencesEditor.apply();
+    }
+
     @Override
     public void onClick(View v) {
         int status = state.get();
@@ -344,10 +365,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             portText.setEnabled(false);
             clientNameText.setEnabled(false);
 
-            Editable editable = ipText.getText();
-            if (editable != null) {
-                String ip = editable.toString();
+
+
+            String editable = ipText.getText().toString();
+            if (editable != null) {String ip = editable.toString();
                 if (validateIp(ip)) {
+
+
+
                     state.set(CONNECTING);
                     connect(ip);
                 } else {
