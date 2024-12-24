@@ -137,7 +137,7 @@ public class Synergy extends Activity {
             //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
             Log.debug("Hostname: " + clientName);
 
-            Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
+            Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, basicScreen);
 
             //new SynergyConnectTask().execute(client);
 

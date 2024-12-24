@@ -31,7 +31,6 @@ import org.synergy.base.EventType;
 import org.synergy.base.utils.Log;
 import org.synergy.common.screens.ScreenInterface;
 import org.synergy.io.Stream;
-import org.synergy.io.StreamFilterFactoryInterface;
 import org.synergy.io.msgs.EnterMessage;
 import org.synergy.io.msgs.HelloBackMessage;
 import org.synergy.io.msgs.HelloMessage;
@@ -50,7 +49,6 @@ public class Client implements EventTarget {
     private InetSocketAddress serverAddress;
     private Stream stream;
     private SocketFactoryInterface socketFactory;
-    private StreamFilterFactoryInterface streamFilterFactory;
     private ScreenInterface screen;
 
     private int mouseX;
@@ -59,14 +57,13 @@ public class Client implements EventTarget {
     private ServerProxy server;
 
     public Client(final Context context, final String name, final InetSocketAddress serverAddress,
-                  SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
+                  SocketFactoryInterface socketFactory,
                   ScreenInterface screen) {
 
         this.context = context;
         this.name = name;
         this.serverAddress = serverAddress;
         this.socketFactory = socketFactory;
-        this.streamFilterFactory = streamFilterFactory;
         this.screen = screen;
 
         assert (socketFactory != null);
@@ -98,9 +95,6 @@ public class Client implements EventTarget {
 
             // filter socket messages, including a packetizing filter
             stream = socket;
-            if (streamFilterFactory != null) {
-                // TODO stream = streamFilterFactory.create (stream, true);
-            }
 
             // connect
             Log.debug("connecting to server");
