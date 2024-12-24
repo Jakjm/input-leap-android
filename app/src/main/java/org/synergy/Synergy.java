@@ -33,7 +33,6 @@ import org.synergy.base.utils.Log;
 import org.synergy.client.Client;
 import org.synergy.common.screens.BasicScreen;
 import org.synergy.net.SocketFactoryInterface;
-import org.synergy.net.SynergyConnectTask;
 import org.synergy.net.TCPSocketFactory;
 
 import java.net.InetSocketAddress;
@@ -138,8 +137,7 @@ public class Synergy extends Activity {
             Log.debug("Hostname: " + clientName);
 
             Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
-
-            //new SynergyConnectTask().execute(client);
+            client.connect();//TODO....
 
             //TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
 

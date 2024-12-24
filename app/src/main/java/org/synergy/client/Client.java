@@ -42,6 +42,7 @@ import org.synergy.net.SocketFactoryInterface;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.provider.ContactsContract;
 
 public class Client implements EventTarget {
 
@@ -94,7 +95,8 @@ public class Client implements EventTarget {
             }
 
             // create the socket
-            DataSocketInterface socket = socketFactory.create();
+            DataSocketInterface socket = null;
+                    //TODO socketFactory.create();
 
             // filter socket messages, including a packetizing filter
             stream = socket;

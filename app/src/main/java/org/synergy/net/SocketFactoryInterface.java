@@ -19,7 +19,9 @@
  */
 package org.synergy.net;
 
-public interface SocketFactoryInterface {
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
-    public DataSocketInterface create();
+public interface SocketFactoryInterface {
+    public Socket create(InetSocketAddress address);
 }

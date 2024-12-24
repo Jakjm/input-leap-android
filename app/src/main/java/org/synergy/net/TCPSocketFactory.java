@@ -19,13 +19,23 @@
  */
 package org.synergy.net;
 
-public class TCPSocketFactory implements SocketFactoryInterface {
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+public class TCPSocketFactory implements SocketFactoryInterface{
 
     public TCPSocketFactory() {
+
     }
 
-    public DataSocketInterface create() {
-        return new TCPSocket();
+    public Socket create(InetSocketAddress address) {
+        try {
+            return new Socket(address.getAddress(), address.getPort());
+        }
+        catch(IOException e){
+            return null;
+        }
     }
 
 
