@@ -28,10 +28,10 @@ import android.content.DialogInterface;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.Editable;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
@@ -44,7 +44,12 @@ import androidx.core.view.WindowInsetsCompat;
 import javax.net.ssl.*;
 import com.google.android.material.textfield.TextInputEditText;
 
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private final static String PROP_clientName = "clientNAME";
+    private final static String PROP_serverPort = "serverPORT";
+    private final static String PROP_serverURL = "serverURL";
     public static final int DISCONNECTED = 0;
     public static final int CONNECTING = 1;
     public static final int CONNECTED = 2;
@@ -71,12 +76,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         System.loadLibrary("inputleap");
     }
 
-    void loadElements(){
+    void loadElements(){ //Load elements of our activity....
         startClientBtn = (Button)findViewById(R.id.start_client_button);
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
+    }
+
+    void initElements(){ //Initialize elements of our activity with the correct text...
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        ipText.setText(preferences.getString(PROP_serverURL,""));
+        portText.setText(preferences.getString(PROP_serverPort, "24800"));
+        clientNameText.setText(preferences.getString(PROP_clientName, android.os.Build.MODEL));
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,11 +102,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
         loadElements();
-
+        initElements();
 
         final Handler handler = new Handler();
         Runnable runnable = new Runnable() {
-
             @Override
             public void run() {
                 try {
@@ -103,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // TODO: handle exception
                 } finally {
                     //also call the same runnable to call it at regular interval
-                    handler.postDelayed(this, 150);
+                    handler.postDelayed(this, 200);
                 }
             }
         };
@@ -113,6 +124,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    boolean validatePort(int port){
+        return 1 <= port && port <= 65536;
+    }
     boolean validateIp(String ip) {
         int firstDot = ip.indexOf('.');
         int secondDot = ip.indexOf('.', firstDot + 1);
@@ -138,9 +152,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-    public class TrustMgr implements X509TrustManager {
+
+    public class InputLeapTrustManager implements X509TrustManager {
         volatile RESULT result;
-        public TrustMgr(){
+        public InputLeapTrustManager(){
 
         }
         public void checkClientTrusted(X509Certificate[] chain, String authType) {
@@ -185,44 +200,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //TODO user should be able to permanently save this certificate....
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException{
             for (int i = 0; i < chain.length; i++) {
                 X509Certificate cert = chain[i];
                 try {
-                    String signature = getSignature(cert);
+                    final String signature = getSignature(cert);
+                    Runnable alertTask = new Runnable() {
+                        public void run() {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                            builder.setTitle("Confirm");
+                            builder.setMessage("Do you trust server signature: " + signature);
+                            builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // Do nothing but close the dialo
+                                   result = RESULT.YES;
+                                   dialog.dismiss();
 
-               Runnable alertTask = new Runnable() {
-                    public void run() {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        builder.setTitle("Confirm");
-                        builder.setMessage("Do you trust server signature: " + signature);
-                        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Do nothing but close the dialo
-                               result = RESULT.YES;
-                               dialog.dismiss();
-
-                            }
-                        });
-                        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Do nothing
-                                result = RESULT.NO;
-                                dialog.dismiss();
-                            }
-                        });
-                        AlertDialog alert = builder.create();
-                        alert.show();
-                    }
-                };
-                runOnUiThread(alertTask);
-                while(result == RESULT.UNDECIDED){
-                }
-                if(result == RESULT.NO)throw new Exception();
-                } catch (Exception e) {
+                                }
+                            });
+                            builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // Do nothing
+                                    result = RESULT.NO;
+                                    dialog.dismiss();
+                                }
+                            });
+                            AlertDialog alert = builder.create();
+                            alert.show();
+                        }
+                    };
+                    runOnUiThread(alertTask);
+                } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 }
+
+                while(result == RESULT.UNDECIDED){
+                }
+                if(result == RESULT.NO)throw new RuntimeException();
             }
             //If user does not accept it...
                 //throw new java.security.cert.CertificateException("User did not trust the certificate.");
@@ -236,17 +251,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return new X509Certificate[0];
         }
     }
-    public void connect(String ip){
+    public void connect(String ip, int port){
         int result;
         Runnable task = new Runnable(){
             public void run(){
                 if(state.get() == CONNECTING) {
                     try {
                         SSLContext sslContext = SSLContext.getInstance("TLS");
-                        sslContext.init(null, new TrustManager[]{new TrustMgr()}, null);
+                        sslContext.init(null, new TrustManager[]{new InputLeapTrustManager()}, null);
                         SocketFactory sslFactory = sslContext.getSocketFactory();
 
-                        socket = sslFactory.createSocket(ip, 24800);
+                        socket = sslFactory.createSocket(ip, port);
                         SSLSocket sslSocket = (SSLSocket) socket;
                         sslSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
                             @Override
@@ -331,6 +346,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+
+    public void updatePreferences(String name, String url, int port){
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor preferencesEditor = preferences.edit();
+        preferencesEditor.putString(PROP_clientName, name);
+        preferencesEditor.putString(PROP_serverURL, url);
+        preferencesEditor.putString(PROP_serverPort, Integer.toString(port));
+        preferencesEditor.apply();
+    }
+
     @Override
     public void onClick(View v) {
         int status = state.get();
@@ -344,17 +369,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             portText.setEnabled(false);
             clientNameText.setEnabled(false);
 
-            Editable editable = ipText.getText();
-            if (editable != null) {
-                String ip = editable.toString();
-                if (validateIp(ip)) {
+            try {
+                String ip = ipText.getText().toString();
+                int port = Integer.parseInt(portText.getText().toString());
+                String clientName = clientNameText.getText().toString();
+
+                if (validateIp(ip) && validatePort(port)) {
+                    updatePreferences(clientName, ip, port);
                     state.set(CONNECTING);
-                    connect(ip);
+                    connect(ip, port);
                 } else {
                     startClientBtn.setEnabled(true);
                     ipText.setEnabled(true);
-                    //TODO complain that ip is incorrect with a dialog...
+                    //TODO complain that ip or something is incorrect with a dialog...
                 }
+            }
+            catch(NumberFormatException | NullPointerException e){
+                //TODO complain that something is incorrect....
             }
         }
     }

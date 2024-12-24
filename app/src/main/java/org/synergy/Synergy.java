@@ -25,10 +25,6 @@ import android.os.Bundle;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.EditText;
-
-import com.example.inputleap.R;
 
 import org.synergy.base.Event;
 import org.synergy.base.EventQueue;
@@ -36,10 +32,11 @@ import org.synergy.base.EventType;
 import org.synergy.base.utils.Log;
 import org.synergy.client.Client;
 import org.synergy.common.screens.BasicScreen;
-import org.synergy.net.NetworkAddress;
 import org.synergy.net.SocketFactoryInterface;
 import org.synergy.net.SynergyConnectTask;
 import org.synergy.net.TCPSocketFactory;
+
+import java.net.InetSocketAddress;
 
 public class Synergy extends Activity {
 
@@ -124,7 +121,7 @@ public class Synergy extends Activity {
 
         try {
             SocketFactoryInterface socketFactory = new TCPSocketFactory();
-            NetworkAddress serverAddress = new NetworkAddress(ipAddress, port);
+            InetSocketAddress serverAddress = new InetSocketAddress(ipAddress, port);
 
             // TODO start the accessibility service injection here
 
@@ -141,7 +138,9 @@ public class Synergy extends Activity {
             Log.debug("Hostname: " + clientName);
 
             Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
-            new SynergyConnectTask().execute(client);
+
+            //new SynergyConnectTask().execute(client);
+
             //TastyToast.makeText(getApplicationContext(), "Device Connected", TastyToast.LENGTH_LONG, TastyToast.SUCCESS);
 
             // TODO this looks quite hacky

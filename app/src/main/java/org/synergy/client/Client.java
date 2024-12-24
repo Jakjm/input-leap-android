@@ -21,6 +21,7 @@ package org.synergy.client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.synergy.base.Event;
 import org.synergy.base.interfaces.EventJobInterface;
@@ -35,7 +36,6 @@ import org.synergy.io.msgs.HelloBackMessage;
 import org.synergy.io.msgs.HelloMessage;
 import org.synergy.io.msgs.LeaveMessage;
 import org.synergy.net.DataSocketInterface;
-import org.synergy.net.NetworkAddress;
 import org.synergy.net.SocketFactoryInterface;
 
 import android.content.Context;
@@ -46,7 +46,7 @@ public class Client implements EventTarget {
 
     private final Context context;
     private String name;
-    private NetworkAddress serverAddress;
+    private InetSocketAddress serverAddress;
     private Stream stream;
     private SocketFactoryInterface socketFactory;
     private StreamFilterFactoryInterface streamFilterFactory;
@@ -57,7 +57,7 @@ public class Client implements EventTarget {
 
     private ServerProxy server;
 
-    public Client(final Context context, final String name, final NetworkAddress serverAddress,
+    public Client(final Context context, final String name, final InetSocketAddress serverAddress,
                   SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
                   ScreenInterface screen) {
 
@@ -85,11 +85,9 @@ public class Client implements EventTarget {
         }
 
         try {
-            serverAddress.resolve();
 
             if (serverAddress.getAddress() != null) {
                 Log.debug("Connecting to: '" +
-                        serverAddress.getHostname() + "': " +
                         serverAddress.getAddress() + ":" +
                         serverAddress.getPort());
             }
@@ -115,7 +113,7 @@ public class Client implements EventTarget {
             //        + ":" + serverAddress.getPort(), Toast.LENGTH_SHORT);
             //toast.show();
         } catch (IOException e) {
-            final String errorMessage = "Failed to connect to " + serverAddress.getHostname()
+            final String errorMessage = "Failed to connect to " + serverAddress.getHostString()
                     + ":" + serverAddress.getPort();
             Log.error(errorMessage);
             //final Toast toast = Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT);

@@ -19,10 +19,6 @@
  */
 package org.synergy.net;
 
-import org.synergy.net.DataSocketInterface;
-import org.synergy.net.ListenSocketInterface;
-import org.synergy.net.SocketFactoryInterface;
-
 public class TCPSocketFactory implements SocketFactoryInterface {
 
     public TCPSocketFactory() {
@@ -32,9 +28,6 @@ public class TCPSocketFactory implements SocketFactoryInterface {
         return new TCPSocket();
     }
 
-    public ListenSocketInterface createListen() {
-        return new TCPListenSocket();
-    }
 
 }
 

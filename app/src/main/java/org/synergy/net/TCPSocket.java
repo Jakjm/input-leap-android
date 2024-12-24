@@ -28,8 +28,6 @@ import java.net.Socket;
 import org.synergy.base.Event;
 import org.synergy.base.EventQueue;
 import org.synergy.base.EventType;
-import org.synergy.net.DataSocketInterface;
-import org.synergy.net.NetworkAddress;
 
 public class TCPSocket implements DataSocketInterface {
 
@@ -40,6 +38,8 @@ public class TCPSocket implements DataSocketInterface {
     private boolean connected = false;
     private boolean readable = false;
     private boolean writable = false;
+
+
 
     public TCPSocket() {
         try {
@@ -71,7 +71,7 @@ public class TCPSocket implements DataSocketInterface {
     public void finalize() throws Throwable {
     }
 
-    public void bind(final NetworkAddress address) {
+    public void bind(final InetSocketAddress address) {
     }
 
     public void close() {
@@ -89,11 +89,10 @@ public class TCPSocket implements DataSocketInterface {
         return socket.getOutputStream();
     }
 
-    public void connect(final NetworkAddress address)
+    public void connect(final InetSocketAddress address)
             throws IOException {
         // TODO
-        socket.connect(new InetSocketAddress(address.getAddress(), address.getPort()),
-                SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
+        socket.connect(address, SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
 
         // Turn off Nagle's algorithm and set traffic type (RFC 1349) to minimize delay
         // to avoid mouse pointer "lagging"

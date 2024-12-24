@@ -26,7 +26,6 @@ public class QueryInfoMessage extends EmptyMessage {
 
     public QueryInfoMessage (DataInputStream din) {
         super ();
-    }
 
     public QueryInfoMessage () {
         super (MESSAGE_TYPE);
