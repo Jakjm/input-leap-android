@@ -1,6 +1,7 @@
 package com.example.inputleap;
 
 import java.io.FileOutputStream;
+import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -32,7 +33,9 @@ import android.content.SharedPreferences;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
 import android.widget.Button;
@@ -44,6 +47,14 @@ import androidx.core.view.WindowInsetsCompat;
 import javax.net.ssl.*;
 import com.google.android.material.textfield.TextInputEditText;
 
+import org.synergy.base.utils.Log;
+import org.synergy.client.Client;
+import org.synergy.common.screens.BasicScreen;
+import org.synergy.net.InputLeapTrustManager;
+import org.synergy.net.SocketFactoryInterface;
+import org.synergy.net.TCPSocketFactory;
+import org.synergy.net.TLSSocketFactory;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -53,11 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public static final int DISCONNECTED = 0;
     public static final int CONNECTING = 1;
     public static final int CONNECTED = 2;
-    enum RESULT{
-        UNDECIDED,
-        YES,
-        NO
-    }
+
     AtomicInteger state = new AtomicInteger(DISCONNECTED);
     private View view;
 
@@ -153,138 +160,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    public class InputLeapTrustManager implements X509TrustManager {
-        volatile RESULT result;
-        public InputLeapTrustManager(){
-
-        }
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-            //not implemented....
-        }
-
-        private void saveCertificate(X509Certificate certificate) {
-            try {
-                // Load or create a new KeyStore
-                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                keyStore.load(null, null); // Create a new empty KeyStore
-
-                // Add the certificate to the KeyStore
-                String alias = "server-cert";
-                keyStore.setCertificateEntry(alias, certificate);
-
-                // Save the KeyStore to a file
-                try (FileOutputStream fos = new FileOutputStream("truststore.jks")) {
-                    keyStore.store(fos, "password".toCharArray());
-                }
-
-                System.out.println("Certificate saved to truststore.jks");
-            } catch (Exception e) {
-                System.out.println("Failed to save the certificate: " + e.getMessage());
-            }
-        }
-        public String getSignature(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
-            //byte[] sigBytes = cert.getSignature();
-            byte[] encoded = cert.getEncoded();
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] sigBytes = digest.digest(encoded);
-
-            if(sigBytes.length < 1)return "";
-            StringBuilder builder = new StringBuilder();
-            builder.append(Integer.toHexString(0xFF & sigBytes[0]));
-            for(int i = 1; i < sigBytes.length;++i){
-                builder.append(':');
-                builder.append(Integer.toHexString(0xFF & sigBytes[i]));
-            }
-            return builder.toString().toUpperCase();
-        }
 
 
-        //TODO user should be able to permanently save this certificate....
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException{
-            for (int i = 0; i < chain.length; i++) {
-                X509Certificate cert = chain[i];
-                try {
-                    final String signature = getSignature(cert);
-                    Runnable alertTask = new Runnable() {
-                        public void run() {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setTitle("Confirm");
-                            builder.setMessage("Do you trust server signature: " + signature);
-                            builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Do nothing but close the dialo
-                                   result = RESULT.YES;
-                                   dialog.dismiss();
 
-                                }
-                            });
-                            builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Do nothing
-                                    result = RESULT.NO;
-                                    dialog.dismiss();
-                                }
-                            });
-                            AlertDialog alert = builder.create();
-                            alert.show();
-                        }
-                    };
-                    runOnUiThread(alertTask);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
-
-                while(result == RESULT.UNDECIDED){
-                }
-                if(result == RESULT.NO)throw new RuntimeException();
-            }
-            //If user does not accept it...
-                //throw new java.security.cert.CertificateException("User did not trust the certificate.");
-            //}
-            // Save the certificate dynamically if user accepts
-            saveCertificate(chain[0]);
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    }
-    public void connect(String ip, int port){
+    public void connect(InetSocketAddress addressPort){
         int result;
         Runnable task = new Runnable(){
             public void run(){
-                if(state.get() == CONNECTING) {
-                    try {
-                        SSLContext sslContext = SSLContext.getInstance("TLS");
-                        sslContext.init(null, new TrustManager[]{new InputLeapTrustManager()}, null);
-                        SocketFactory sslFactory = sslContext.getSocketFactory();
-
-                        socket = sslFactory.createSocket(ip, port);
-                        SSLSocket sslSocket = (SSLSocket) socket;
-                        sslSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
+                HandshakeCompletedListener listener = new HandshakeCompletedListener() {
+                    public void handshakeCompleted(HandshakeCompletedEvent event) {
+                        state.set(CONNECTED);
+                        runOnUiThread(new Runnable() {
                             @Override
-                            public void handshakeCompleted(HandshakeCompletedEvent event) {
-                                try {
-                                    socket.setSoTimeout(30);
-                                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                                state.set(CONNECTED);
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        startClientBtn.setEnabled(true);
-                                    }
-                                });
+                            public void run() {
+                                startClientBtn.setEnabled(true);
                             }
                         });
-                        sslSocket.startHandshake();
-                    } catch (Exception e) {
-                        state.set(DISCONNECTED);
                     }
+                };
+                TCPSocketFactory factory = new TLSSocketFactory(MainActivity.this, listener); //TODO choose Factory based on checkbox
+                try {
+                    socket = factory.create(addressPort);
+                    socket.setSoTimeout(30); //TODO generalize this line
+                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         };
@@ -356,6 +256,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         preferencesEditor.apply();
     }
 
+
+    public Client createClient(InetSocketAddress addressPort, TCPSocketFactory factory, String clientName){
+        //SocketFactoryInterface socketFactory = new TCPSocketFactory();
+
+        // TODO start the accessibility service injection here
+
+        BasicScreen basicScreen = new BasicScreen();
+        WindowManager wm = getWindowManager();
+        Display display = wm.getDefaultDisplay();
+        basicScreen.setShape(display.getWidth(), display.getHeight());
+        Log.debug("Resolution: " + display.getWidth() + " x " + display.getHeight());
+
+
+        //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
+        Log.debug("Hostname: " + clientName);
+
+        //TODO... add this back in
+        //Client client = new Client(getApplicationContext(), clientName, addressPort, factory, null, basicScreen);
+        return null;
+    }
+
     @Override
     public void onClick(View v) {
         int status = state.get();
@@ -377,7 +298,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (validateIp(ip) && validatePort(port)) {
                     updatePreferences(clientName, ip, port);
                     state.set(CONNECTING);
-                    connect(ip, port);
+                    connect(new InetSocketAddress(ip, port));
+                    //Client c = createClient(addressPort, clientName);
                 } else {
                     startClientBtn.setEnabled(true);
                     ipText.setEnabled(true);

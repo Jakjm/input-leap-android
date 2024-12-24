@@ -24,7 +24,7 @@ import java.net.InetSocketAddress;
 
 import org.synergy.io.Stream;
 
-public interface DataSocketInterface extends Stream, SocketInterface {
+public interface DataSocketInterface extends Stream {
 
     public abstract void connect(InetSocketAddress address) throws IOException;
 
