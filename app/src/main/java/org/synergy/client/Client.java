@@ -31,7 +31,6 @@ import org.synergy.base.EventType;
 import org.synergy.base.utils.Log;
 import org.synergy.common.screens.ScreenInterface;
 import org.synergy.io.Stream;
-import org.synergy.io.StreamFilterFactoryInterface;
 import org.synergy.io.msgs.EnterMessage;
 import org.synergy.io.msgs.HelloBackMessage;
 import org.synergy.io.msgs.HelloMessage;
