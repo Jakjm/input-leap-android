@@ -124,6 +124,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    boolean validatePort(int port){
+        return 1 <= port && port <= 65536;
+    }
     boolean validateIp(String ip) {
         int firstDot = ip.indexOf('.');
         int secondDot = ip.indexOf('.', firstDot + 1);
@@ -148,6 +151,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return true;
     }
+
 
     public class InputLeapTrustManager implements X509TrustManager {
         volatile RESULT result;
@@ -196,44 +200,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //TODO user should be able to permanently save this certificate....
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException{
             for (int i = 0; i < chain.length; i++) {
                 X509Certificate cert = chain[i];
                 try {
-                    String signature = getSignature(cert);
+                    final String signature = getSignature(cert);
+                    Runnable alertTask = new Runnable() {
+                        public void run() {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                            builder.setTitle("Confirm");
+                            builder.setMessage("Do you trust server signature: " + signature);
+                            builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // Do nothing but close the dialo
+                                   result = RESULT.YES;
+                                   dialog.dismiss();
 
-               Runnable alertTask = new Runnable() {
-                    public void run() {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        builder.setTitle("Confirm");
-                        builder.setMessage("Do you trust server signature: " + signature);
-                        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Do nothing but close the dialo
-                               result = RESULT.YES;
-                               dialog.dismiss();
-
-                            }
-                        });
-                        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Do nothing
-                                result = RESULT.NO;
-                                dialog.dismiss();
-                            }
-                        });
-                        AlertDialog alert = builder.create();
-                        alert.show();
-                    }
-                };
-                runOnUiThread(alertTask);
-                while(result == RESULT.UNDECIDED){
-                }
-                if(result == RESULT.NO)throw new Exception();
-                } catch (Exception e) {
+                                }
+                            });
+                            builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // Do nothing
+                                    result = RESULT.NO;
+                                    dialog.dismiss();
+                                }
+                            });
+                            AlertDialog alert = builder.create();
+                            alert.show();
+                        }
+                    };
+                    runOnUiThread(alertTask);
+                } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 }
+
+                while(result == RESULT.UNDECIDED){
+                }
+                if(result == RESULT.NO)throw new RuntimeException();
             }
             //If user does not accept it...
                 //throw new java.security.cert.CertificateException("User did not trust the certificate.");
@@ -247,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return new X509Certificate[0];
         }
     }
-    public void connect(String ip){
+    public void connect(String ip, int port){
         int result;
         Runnable task = new Runnable(){
             public void run(){
@@ -257,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         sslContext.init(null, new TrustManager[]{new InputLeapTrustManager()}, null);
                         SocketFactory sslFactory = sslContext.getSocketFactory();
 
-                        socket = sslFactory.createSocket(ip, 24800);
+                        socket = sslFactory.createSocket(ip, port);
                         SSLSocket sslSocket = (SSLSocket) socket;
                         sslSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
                             @Override
@@ -343,12 +347,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    public void updatePreferences(String name, String url, String port){
+    public void updatePreferences(String name, String url, int port){
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor preferencesEditor = preferences.edit();
         preferencesEditor.putString(PROP_clientName, name);
         preferencesEditor.putString(PROP_serverURL, url);
-        preferencesEditor.putString(PROP_serverPort, port);
+        preferencesEditor.putString(PROP_serverPort, Integer.toString(port));
         preferencesEditor.apply();
     }
 
@@ -365,21 +369,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             portText.setEnabled(false);
             clientNameText.setEnabled(false);
 
+            try {
+                String ip = ipText.getText().toString();
+                int port = Integer.parseInt(portText.getText().toString());
+                String clientName = clientNameText.getText().toString();
 
-
-            String editable = ipText.getText().toString();
-            if (editable != null) {String ip = editable.toString();
-                if (validateIp(ip)) {
-
-
-
+                if (validateIp(ip) && validatePort(port)) {
+                    updatePreferences(clientName, ip, port);
                     state.set(CONNECTING);
-                    connect(ip);
+                    connect(ip, port);
                 } else {
                     startClientBtn.setEnabled(true);
                     ipText.setEnabled(true);
-                    //TODO complain that ip is incorrect with a dialog...
+                    //TODO complain that ip or something is incorrect with a dialog...
                 }
+            }
+            catch(NumberFormatException | NullPointerException e){
+                //TODO complain that something is incorrect....
             }
         }
     }
