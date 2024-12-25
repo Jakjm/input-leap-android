@@ -16,9 +16,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 public class TLSSocketFactory extends TCPSocketFactory{
-    HandshakeCompletedListener listener;
-    public TLSSocketFactory( HandshakeCompletedListener listener){
-        this.listener = listener;
+    public TLSSocketFactory(){
 
     }
 
@@ -34,7 +32,6 @@ public class TLSSocketFactory extends TCPSocketFactory{
                 SSLSocket socket = (SSLSocket)sslFactory.createSocket(unsecured, addressPort.getAddress().toString(), addressPort.getPort(), true);
 
                 //Perform TLS handshake...
-                socket.addHandshakeCompletedListener(listener);
                 socket.startHandshake();
                 return socket;
             } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {

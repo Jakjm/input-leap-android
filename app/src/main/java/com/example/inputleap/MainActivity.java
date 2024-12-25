@@ -141,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void updateConnectionStatus() throws IOException {
         int status = state.get();
         if(status == CONNECTED){
+            startClientBtn.setEnabled(true);
             startClientBtn.setText("Stop InputLeap Client");
         }
         else if(status == CONNECTING){
@@ -180,7 +181,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         basicScreen.setShape(display.getWidth(), display.getHeight());
         Log.debug("Resolution: " + display.getWidth() + " x " + display.getHeight());
 
-
         //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
         Log.debug("Hostname: " + clientName);
 
@@ -213,18 +213,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 state.set(CONNECTING);
 
                 SocketFactoryInterface socketFactory;
-                HandshakeCompletedListener listener = new HandshakeCompletedListener() {
-                    public void handshakeCompleted(HandshakeCompletedEvent event) {
-                        state.set(CONNECTED);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                startClientBtn.setEnabled(true);
-                            }
-                        });
-                    }
-                };
-                if(useTLS)socketFactory = new TLSSocketFactory(listener);
+                if(useTLS)socketFactory = new TLSSocketFactory();
                 else socketFactory = new TCPSocketFactory();
                 //connect();
                 Client client = createClient(addressPort, clientName);
@@ -234,18 +223,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 };
                 executorService.execute(connectTask);
+
+                state.set(CONNECTED);
                 mainLoopThread.start();
             }
             catch(Exception e){
                 //TODO complain that something is incorrect....
-                startClientBtn.setEnabled(true);
-                ipText.setEnabled(true);
-                portText.setEnabled(true);
-                clientNameText.setEnabled(true);
-                enable_ssl_checkbox.setEnabled(true);
+                state.set(DISCONNECTED);
             }
-
-
         }
     }
 
