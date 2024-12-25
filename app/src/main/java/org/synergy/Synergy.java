@@ -136,7 +136,7 @@ public class Synergy extends Activity {
             //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
             Log.debug("Hostname: " + clientName);
             
-            Client client = new Client(getApplicationContext(), clientName, serverAddress, socketFactory, basicScreen);
+            Client client = new Client(getApplicationContext(), clientName, serverAddress, basicScreen);
             //new SynergyConnectTask().execute(client); TODO fix this
 
 

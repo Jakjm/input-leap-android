@@ -24,61 +24,43 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 
 import org.synergy.base.Event;
 import org.synergy.base.EventQueue;
 import org.synergy.base.EventType;
+import org.synergy.base.utils.Log;
+import org.synergy.io.Stream;
 
-public class TCPSocket implements DataSocketInterface {
-
-    private static final int SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000;
-
+public class TCPSocket implements Stream {
     private Socket socket;
 
-    private boolean connected = false;
-    private boolean readable = false;
-    private boolean writable = false;
+    public TCPSocket(Socket socket) {
+        this.socket = socket;
 
-
-
-    public TCPSocket() {
         try {
-            socket = new Socket();
-
-
-        } catch (Exception e) {
-            // TODO
-            e.printStackTrace();
+            // Turn off Nagle's algorithm and set traffic type (RFC 1349) to minimize delay
+            // to avoid mouse pointer "lagging"
+            socket.setTcpNoDelay(true);
+            socket.setTrafficClass(8);
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
         }
-
-    }
-
-    private void init() {
-        // default state
-        connected = false;
-        readable = false;
-        writable = false;
-
-    }
-
-    private void onConnected() {
-        connected = true;
-        readable = true;
-        writable = true;
-    }
-
-
-    public void finalize() throws Throwable {
-    }
-
-    public void bind(final InetSocketAddress address) {
+        sendEvent(EventType.SOCKET_CONNECTED);
+        sendEvent(EventType.STREAM_INPUT_READY);
     }
 
     public void close() {
+        try {
+            socket.close();
+        }
+        catch(IOException e){
+            Log.info("Error closing socket");
+        }
     }
 
     public boolean isReady() {
-        return connected;
+        return socket.isConnected();
     }
 
     public InputStream getInputStream() throws IOException {
@@ -87,21 +69,6 @@ public class TCPSocket implements DataSocketInterface {
 
     public OutputStream getOutputStream() throws IOException {
         return socket.getOutputStream();
-    }
-
-    public void connect(final InetSocketAddress address)
-            throws IOException {
-        // TODO
-        socket.connect(address, SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
-
-        // Turn off Nagle's algorithm and set traffic type (RFC 1349) to minimize delay
-        // to avoid mouse pointer "lagging"
-        socket.setTcpNoDelay(true);
-        socket.setTrafficClass(8);
-
-        sendEvent(EventType.SOCKET_CONNECTED);
-        onConnected();
-        sendEvent(EventType.STREAM_INPUT_READY);
     }
 
     public Object getEventTarget() {

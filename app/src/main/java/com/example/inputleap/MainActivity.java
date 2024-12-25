@@ -68,16 +68,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     AtomicInteger state = new AtomicInteger(DISCONNECTED);
     private View view;
 
-    Socket socket;
+    //Socket socket;
     ExecutorService executorService = Executors.newFixedThreadPool(4);
-    BufferedReader reader;
+    //BufferedReader reader;
 
     //XML elements from screen....
     Button startClientBtn;
     TextInputEditText ipText;
     TextInputEditText portText;
     TextInputEditText clientNameText;
-    EditText outputText;
+
+    MainLoopThread mainLoopThread;
 
     static {
         System.loadLibrary("inputleap");
@@ -88,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
-        outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
     }
 
     void initElements(){ //Initialize elements of our activity with the correct text...
@@ -129,6 +129,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //runnable must be execute once
         handler.post(runnable);
 
+        mainLoopThread = new MainLoopThread();
+
     }
 
     boolean validatePort(int port){
@@ -159,79 +161,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-
-
-
-
-    public void connect(InetSocketAddress addressPort){
-        int result;
-        Runnable task = new Runnable(){
-            public void run(){
-                HandshakeCompletedListener listener = new HandshakeCompletedListener() {
-                    public void handshakeCompleted(HandshakeCompletedEvent event) {
-                        state.set(CONNECTED);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                startClientBtn.setEnabled(true);
-                            }
-                        });
-                    }
-                };
-                TCPSocketFactory factory = new TLSSocketFactory(MainActivity.this, listener); //TODO choose Factory based on checkbox
-                try {
-                    socket = factory.create(addressPort);
-                    socket.setSoTimeout(30); //TODO generalize this line
-                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-        executorService.execute(task);
-    }
-
-    public void disconnect(){
-        Runnable disconnectTask = new Runnable() {
-            public void run() {
-                try {
-                    Socket sslSocket = socket;
-                    socket = null;
-                    sslSocket.close();
-                    reader = null;
-                } catch (Exception e) {
-                    Exception x = e;
-                }
-            }
-        };
-        executorService.execute(disconnectTask);
-
-    }
-
     public void updateConnectionStatus() throws IOException {
         int status = state.get();
-        FutureTask<String> task = new FutureTask<String>(new Callable<String>(){
-            public String call(){
-                String result = null;
-                try {
-                    result = "" + (char)reader.read();
-                } catch (IOException e) {
-                    result = null;
-                }
-                return result;
-            }
-        });
-
         if(status == CONNECTED){
             startClientBtn.setText("Stop InputLeap Client");
-            try {
-                executorService.execute(task);
-                String serverMessage = task.get(30, TimeUnit.MILLISECONDS);
-                if(serverMessage != null)
-                    outputText.setText(outputText.getText().append(serverMessage));
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                throw new RuntimeException(e);
-            }
         }
         else if(status == CONNECTING){
             startClientBtn.setText("Connecting, please wait...");
@@ -257,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    public Client createClient(InetSocketAddress addressPort, TCPSocketFactory factory, String clientName){
+    public Client createClient(InetSocketAddress addressPort, String clientName){
         //SocketFactoryInterface socketFactory = new TCPSocketFactory();
 
         // TODO start the accessibility service injection here
@@ -273,15 +206,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.debug("Hostname: " + clientName);
 
         //TODO... add this back in
-        //Client client = new Client(getApplicationContext(), clientName, addressPort, factory, null, basicScreen);
-        return null;
+        Client client = new Client(getApplicationContext(), clientName, addressPort, basicScreen);
+        return client;
     }
 
     @Override
     public void onClick(View v) {
         int status = state.get();
         if(status == CONNECTED){
-            disconnect();
+            //disconnect();
             state.set(DISCONNECTED);
         }
         else {
@@ -294,21 +227,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String ip = ipText.getText().toString();
                 int port = Integer.parseInt(portText.getText().toString());
                 String clientName = clientNameText.getText().toString();
-
+                boolean useTLS = true;
                 if (validateIp(ip) && validatePort(port)) {
                     updatePreferences(clientName, ip, port);
                     state.set(CONNECTING);
-                    connect(new InetSocketAddress(ip, port));
-                    //Client c = createClient(addressPort, clientName);
+
+                    SocketFactoryInterface socketFactory;
+                    HandshakeCompletedListener listener = new HandshakeCompletedListener() {
+                        public void handshakeCompleted(HandshakeCompletedEvent event) {
+                            state.set(CONNECTED);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    startClientBtn.setEnabled(true);
+                                }
+                            });
+                        }
+                    };
+                    if(useTLS)socketFactory = new TLSSocketFactory(listener);
+                    else socketFactory = new TCPSocketFactory();
+                    //connect();
+                    Client client = createClient(new InetSocketAddress(ip, port), clientName);
+                    Runnable connectTask = new Runnable(){
+                        public void run(){
+                            client.connect(MainActivity.this, socketFactory);
+                        }
+                    };
+
+                    mainLoopThread.start();
                 } else {
-                    startClientBtn.setEnabled(true);
-                    ipText.setEnabled(true);
-                    //TODO complain that ip or something is incorrect with a dialog...
+                    throw new Exception();
                 }
             }
-            catch(NumberFormatException | NullPointerException e){
+            catch(Exception e){
                 //TODO complain that something is incorrect....
+                startClientBtn.setEnabled(true);
+                ipText.setEnabled(true);
+                portText.setEnabled(true);
+                clientNameText.setEnabled(true);
+
             }
+
+
         }
     }
 

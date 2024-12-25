@@ -19,19 +19,29 @@
  */
 package org.synergy.net;
 
+import android.app.Activity;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class TCPSocketFactory implements SocketFactoryInterface{
-
+    private static final int SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000;
     public TCPSocketFactory() {
 
     }
 
-    public Socket create(InetSocketAddress address) {
+    public TCPSocket tcpSocketCreate(Activity activity, InetSocketAddress addressPort){
+        Socket socket = create(activity, addressPort);
+        if(socket == null)return null;
+        else return new TCPSocket(socket);
+    }
+
+    public Socket create(Activity activity, InetSocketAddress address) {
         try {
-            return new Socket(address.getAddress(), address.getPort());
+            Socket socket = new Socket();
+            socket.connect(address, SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
+            return socket;
         }
         catch(IOException e){
             return null;
