@@ -11,56 +11,103 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="4dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
 
         <TextView
             android:id="@+id/client_name_label_TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
             android:text="Client Name"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/client_name_EditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
             android:hint="Client Name" />
 
         <TextView
             android:id="@+id/ip_label_TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Server IP/URL" />
+            android:fontFamily="@font/alata"
+            android:text="Server IP/URL"
+            android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/ip_EditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
             android:hint="IP of Server" />
 
         <TextView
             android:id="@+id/port_label_TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Server Port (Default = 24800)" />
+            android:fontFamily="@font/alata"
+            android:text="Server Port (Default = 24800)"
+            android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/port_EditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
             android:hint="PortNumber"
             android:text="24800" />
+
+        <CheckBox
+            android:id="@+id/enable_ssl_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
+
+            android:text="Enable SSL/TLS" />
 
         <Button
             android:id="@+id/start_client_button"
             style="@style/Widget.AppCompat.Button.Small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
+            android:inputType="text"
             android:onClick="onClick"
             android:text="Start InputLeap Client"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:iconPadding="12dp"
+            app:strokeColor="#E91E63" />
 
+        <EditText
+            android:id="@+id/editTextTextMultiLine"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:ems="10"
+            android:enabled="false"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:lines="5"
+            android:singleLine="false" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:fontFamily="@font/alata"
+        android:text="InputLeap Android Client"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textStyle="bold"
+        android:typeface="normal"
+        tools:layout_editor_absoluteX="80dp"
+        tools:layout_editor_absoluteY="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

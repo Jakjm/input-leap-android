@@ -43,6 +43,8 @@ import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 
+import com.example.inputleap.MainActivity;
+
 import javax.net.ssl.HandshakeCompletedListener;
 
 public class Client implements EventTarget {
@@ -75,7 +77,7 @@ public class Client implements EventTarget {
         // TODO
     }
 
-    public void connect(Activity activity, SocketFactoryInterface factory) {
+    public void connect(MainActivity activity, SocketFactoryInterface factory) {
         if (stream != null) {
             Log.info("stream != null");
             return;
