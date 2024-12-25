@@ -36,6 +36,7 @@ import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
 import android.widget.Button;
+import android.widget.CheckBox;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -71,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextInputEditText portText;
     TextInputEditText clientNameText;
     EditText outputText;
+    CheckBox enable_ssl_checkbox;
+
 
     static {
         System.loadLibrary("inputleap");
@@ -82,6 +85,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
+        //enable_ssl_checkbox = (CheckBox)findViewById(R.id.enable_ssl_checkbox);
+        enable_ssl_checkbox = findViewById(R.id.enable_ssl_checkbox);
     }
 
     void initElements(){ //Initialize elements of our activity with the correct text...
@@ -89,7 +94,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ipText.setText(preferences.getString(PROP_serverURL,""));
         portText.setText(preferences.getString(PROP_serverPort, "24800"));
         clientNameText.setText(preferences.getString(PROP_clientName, android.os.Build.MODEL));
+        enable_ssl_checkbox.setChecked(true);
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

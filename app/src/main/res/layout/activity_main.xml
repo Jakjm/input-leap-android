@@ -52,11 +52,20 @@
             android:hint="PortNumber"
             android:text="24800" />
 
+        <CheckBox
+            android:id="@+id/enable_ssl_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable SSL/TLS"
+
+            />
+
         <Button
             android:id="@+id/start_client_button"
             style="@style/Widget.AppCompat.Button.Small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:inputType="text"
             android:onClick="onClick"
             android:text="Start InputLeap Client"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
