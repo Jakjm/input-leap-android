@@ -96,7 +96,6 @@
             android:inputType="textMultiLine"
             android:lines="5"
             android:singleLine="false" />
-
     </LinearLayout>
 
     <TextView

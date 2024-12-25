@@ -19,7 +19,12 @@
  */
 package org.synergy.net;
 
-public interface SocketFactoryInterface {
+import android.app.Activity;
 
-    public DataSocketInterface create();
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+public interface SocketFactoryInterface {
+    public Socket create(Activity activity, InetSocketAddress address);
+    public TCPSocket tcpSocketCreate(Activity activity, InetSocketAddress addressPort);
 }

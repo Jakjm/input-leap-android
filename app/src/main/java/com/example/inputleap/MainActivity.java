@@ -1,6 +1,7 @@
 package com.example.inputleap;
 
 import java.io.FileOutputStream;
+import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -32,7 +33,9 @@ import android.content.SharedPreferences;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.EditText;
 import android.widget.Button;
@@ -45,50 +48,51 @@ import androidx.core.view.WindowInsetsCompat;
 import javax.net.ssl.*;
 import com.google.android.material.textfield.TextInputEditText;
 
+import org.synergy.base.utils.Log;
+import org.synergy.client.Client;
+import org.synergy.common.screens.BasicScreen;
+import org.synergy.net.InputLeapTrustManager;
+import org.synergy.net.SocketFactoryInterface;
+import org.synergy.net.TCPSocketFactory;
+import org.synergy.net.TLSSocketFactory;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final static String PROP_clientName = "clientNAME";
     private final static String PROP_serverPort = "serverPORT";
     private final static String PROP_serverURL = "serverURL";
+    private final static String PROP_ENABLE_SSL = "enableSSL";
     public static final int DISCONNECTED = 0;
     public static final int CONNECTING = 1;
     public static final int CONNECTED = 2;
-    enum RESULT{
-        UNDECIDED,
-        YES,
-        NO
-    }
-    AtomicInteger state = new AtomicInteger(DISCONNECTED);
-    private View view;
 
-    Socket socket;
+    AtomicInteger state = new AtomicInteger(DISCONNECTED);
+
+    //Socket socket;
     ExecutorService executorService = Executors.newFixedThreadPool(4);
-    BufferedReader reader;
+    //BufferedReader reader;
 
     //XML elements from screen....
     Button startClientBtn;
     TextInputEditText ipText;
     TextInputEditText portText;
     TextInputEditText clientNameText;
-    EditText outputText;
     CheckBox enable_ssl_checkbox;
-    static final String PROP_ENABLE_SSL = "enableSSL";
+
+    MainLoopThread mainLoopThread;
 
     static {
         System.loadLibrary("inputleap");
     }
 
     void loadElements(){ //Load elements of our activity....
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         startClientBtn = (Button)findViewById(R.id.start_client_button);
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
-        //enable_ssl_checkbox = (CheckBox)findViewById(R.id.enable_ssl_checkbox);
-        enable_ssl_checkbox = findViewById(R.id.enable_ssl_checkbox);
-        enable_ssl_checkbox.setChecked(preferences.getBoolean(PROP_ENABLE_SSL, true));
+        enable_ssl_checkbox = (CheckBox)findViewById(R.id.enable_ssl_checkbox);
     }
 
     void initElements(){ //Initialize elements of our activity with the correct text...
@@ -96,7 +100,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ipText.setText(preferences.getString(PROP_serverURL,""));
         portText.setText(preferences.getString(PROP_serverPort, "24800"));
         clientNameText.setText(preferences.getString(PROP_clientName, android.os.Build.MODEL));
-        enable_ssl_checkbox.setChecked(true);
     }
 
     @Override
@@ -131,6 +134,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //runnable must be execute once
         handler.post(runnable);
 
+        mainLoopThread = new MainLoopThread();
+
     }
 
     boolean validatePort(int port){
@@ -161,186 +166,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-
-    public class InputLeapTrustManager implements X509TrustManager {
-        volatile RESULT result;
-        public InputLeapTrustManager(){
-
-        }
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-            //not implemented....
-        }
-
-        private void saveCertificate(X509Certificate certificate) {
-            try {
-                // Load or create a new KeyStore
-                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                keyStore.load(null, null); // Create a new empty KeyStore
-
-                // Add the certificate to the KeyStore
-                String alias = "server-cert";
-                keyStore.setCertificateEntry(alias, certificate);
-
-                // Save the KeyStore to a file
-                try (FileOutputStream fos = new FileOutputStream("truststore.jks")) {
-                    keyStore.store(fos, "password".toCharArray());
-                }
-
-                System.out.println("Certificate saved to truststore.jks");
-            } catch (Exception e) {
-                System.out.println("Failed to save the certificate: " + e.getMessage());
-            }
-        }
-        public String getSignature(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
-            //byte[] sigBytes = cert.getSignature();
-            byte[] encoded = cert.getEncoded();
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] sigBytes = digest.digest(encoded);
-
-            if(sigBytes.length < 1)return "";
-            StringBuilder builder = new StringBuilder();
-            builder.append(Integer.toHexString(0xFF & sigBytes[0]));
-            for(int i = 1; i < sigBytes.length;++i){
-                builder.append(':');
-                builder.append(Integer.toHexString(0xFF & sigBytes[i]));
-            }
-            return builder.toString().toUpperCase();
-        }
-
-
-        //TODO user should be able to permanently save this certificate....
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException{
-            for (int i = 0; i < chain.length; i++) {
-                X509Certificate cert = chain[i];
-                try {
-                    final String signature = getSignature(cert);
-                    Runnable alertTask = new Runnable() {
-                        public void run() {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setTitle("Confirm");
-                            builder.setMessage("Do you trust server signature: " + signature);
-                            builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Do nothing but close the dialo
-                                   result = RESULT.YES;
-                                   dialog.dismiss();
-
-                                }
-                            });
-                            builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Do nothing
-                                    result = RESULT.NO;
-                                    dialog.dismiss();
-                                }
-                            });
-                            AlertDialog alert = builder.create();
-                            alert.show();
-                        }
-                    };
-                    runOnUiThread(alertTask);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
-
-                while(result == RESULT.UNDECIDED){
-                }
-                if(result == RESULT.NO)throw new RuntimeException();
-            }
-            //If user does not accept it...
-                //throw new java.security.cert.CertificateException("User did not trust the certificate.");
-            //}
-            // Save the certificate dynamically if user accepts
-            saveCertificate(chain[0]);
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    }
-    public void connect(String ip, int port){
-        int result;
-        Runnable task = new Runnable(){
-            public void run(){
-                if(state.get() == CONNECTING) {
-                    try {
-                        SSLContext sslContext = SSLContext.getInstance("TLS");
-                        sslContext.init(null, new TrustManager[]{new InputLeapTrustManager()}, null);
-                        SocketFactory sslFactory = sslContext.getSocketFactory();
-
-                        socket = sslFactory.createSocket(ip, port);
-                        SSLSocket sslSocket = (SSLSocket) socket;
-                        sslSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
-                            @Override
-                            public void handshakeCompleted(HandshakeCompletedEvent event) {
-                                try {
-                                    socket.setSoTimeout(30);
-                                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                                state.set(CONNECTED);
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        startClientBtn.setEnabled(true);
-                                    }
-                                });
-                            }
-                        });
-                        sslSocket.startHandshake();
-                    } catch (Exception e) {
-                        state.set(DISCONNECTED);
-                    }
-                }
-            }
-        };
-        executorService.execute(task);
-    }
-
-    public void disconnect(){
-        Runnable disconnectTask = new Runnable() {
-            public void run() {
-                try {
-                    Socket sslSocket = socket;
-                    socket = null;
-                    sslSocket.close();
-                    reader = null;
-                } catch (Exception e) {
-                    Exception x = e;
-                }
-            }
-        };
-        executorService.execute(disconnectTask);
-
-    }
-
     public void updateConnectionStatus() throws IOException {
         int status = state.get();
-        FutureTask<String> task = new FutureTask<String>(new Callable<String>(){
-            public String call(){
-                String result = null;
-                try {
-                    result = "" + (char)reader.read();
-                } catch (IOException e) {
-                    result = null;
-                }
-                return result;
-            }
-        });
-
         if(status == CONNECTED){
             startClientBtn.setText("Stop InputLeap Client");
-            try {
-                executorService.execute(task);
-                String serverMessage = task.get(30, TimeUnit.MILLISECONDS);
-                if(serverMessage != null)
-                    outputText.setText(outputText.getText().append(serverMessage));
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                throw new RuntimeException(e);
-            }
         }
         else if(status == CONNECTING){
             startClientBtn.setText("Connecting, please wait...");
@@ -366,11 +195,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         preferencesEditor.apply();
     }
 
+
+    public Client createClient(InetSocketAddress addressPort, String clientName){
+        //SocketFactoryInterface socketFactory = new TCPSocketFactory();
+
+        // TODO start the accessibility service injection here
+
+        BasicScreen basicScreen = new BasicScreen();
+        WindowManager wm = getWindowManager();
+        Display display = wm.getDefaultDisplay();
+        basicScreen.setShape(display.getWidth(), display.getHeight());
+        Log.debug("Resolution: " + display.getWidth() + " x " + display.getHeight());
+
+
+        //PlatformIndependentScreen screen = new PlatformIndependentScreen(basicScreen);
+        Log.debug("Hostname: " + clientName);
+
+        //TODO... add this back in
+        Client client = new Client(getApplicationContext(), clientName, addressPort, basicScreen);
+        return client;
+    }
+
     @Override
     public void onClick(View v) {
         int status = state.get();
         if(status == CONNECTED){
-            disconnect();
+            //disconnect();
             state.set(DISCONNECTED);
         }
         else {
@@ -383,20 +233,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String ip = ipText.getText().toString();
                 int port = Integer.parseInt(portText.getText().toString());
                 String clientName = clientNameText.getText().toString();
-
+                boolean useTLS = true;
                 if (validateIp(ip) && validatePort(port)) {
                     updatePreferences(clientName, ip, port);
                     state.set(CONNECTING);
-                    connect(ip, port);
+
+                    SocketFactoryInterface socketFactory;
+                    HandshakeCompletedListener listener = new HandshakeCompletedListener() {
+                        public void handshakeCompleted(HandshakeCompletedEvent event) {
+                            state.set(CONNECTED);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    startClientBtn.setEnabled(true);
+                                }
+                            });
+                        }
+                    };
+                    if(useTLS)socketFactory = new TLSSocketFactory(listener);
+                    else socketFactory = new TCPSocketFactory();
+                    //connect();
+                    Client client = createClient(new InetSocketAddress(ip, port), clientName);
+                    Runnable connectTask = new Runnable(){
+                        public void run(){
+                            client.connect(MainActivity.this, socketFactory);
+                        }
+                    };
+
+                    mainLoopThread.start();
                 } else {
-                    startClientBtn.setEnabled(true);
-                    ipText.setEnabled(true);
-                    //TODO complain that ip or something is incorrect with a dialog...
+                    throw new Exception();
                 }
             }
-            catch(NumberFormatException | NullPointerException e){
+            catch(Exception e){
                 //TODO complain that something is incorrect....
+                startClientBtn.setEnabled(true);
+                ipText.setEnabled(true);
+                portText.setEnabled(true);
+                clientNameText.setEnabled(true);
+
             }
+
+
         }
     }
 

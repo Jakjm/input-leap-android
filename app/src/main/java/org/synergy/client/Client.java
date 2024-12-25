@@ -35,21 +35,22 @@ import org.synergy.io.msgs.EnterMessage;
 import org.synergy.io.msgs.HelloBackMessage;
 import org.synergy.io.msgs.HelloMessage;
 import org.synergy.io.msgs.LeaveMessage;
-import org.synergy.net.DataSocketInterface;
 import org.synergy.net.SocketFactoryInterface;
+import org.synergy.net.TLSSocketFactory;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
+
+import javax.net.ssl.HandshakeCompletedListener;
 
 public class Client implements EventTarget {
 
     private final Context context;
     private String name;
-    private InetSocketAddress serverAddress;
+    private InetSocketAddress serverAddressPort;
     private Stream stream;
-    private SocketFactoryInterface socketFactory;
-    private StreamFilterFactoryInterface streamFilterFactory;
     private ScreenInterface screen;
 
     private int mouseX;
@@ -58,17 +59,13 @@ public class Client implements EventTarget {
     private ServerProxy server;
 
     public Client(final Context context, final String name, final InetSocketAddress serverAddress,
-                  SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
                   ScreenInterface screen) {
 
         this.context = context;
         this.name = name;
-        this.serverAddress = serverAddress;
-        this.socketFactory = socketFactory;
-        this.streamFilterFactory = streamFilterFactory;
+        this.serverAddressPort = serverAddress;
         this.screen = screen;
 
-        assert (socketFactory != null);
         assert (screen != null);
 
         // TODO register suspend / resume event handlers
@@ -78,7 +75,7 @@ public class Client implements EventTarget {
         // TODO
     }
 
-    public void connect() {
+    public void connect(Activity activity, SocketFactoryInterface factory) {
         if (stream != null) {
             Log.info("stream != null");
             return;
@@ -86,35 +83,34 @@ public class Client implements EventTarget {
 
         try {
 
-            if (serverAddress.getAddress() != null) {
+            if (serverAddressPort.getAddress() != null) {
                 Log.debug("Connecting to: '" +
-                        serverAddress.getAddress() + ":" +
-                        serverAddress.getPort());
+                        serverAddressPort.getAddress() + ":" +
+                        serverAddressPort.getPort());
             }
 
             // create the socket
-            DataSocketInterface socket = socketFactory.create();
+            //DataSocketInterface socket = null;
+                    //TODO socketFactory.create();
 
-            // filter socket messages, including a packetizing filter
-            stream = socket;
-            if (streamFilterFactory != null) {
-                // TODO stream = streamFilterFactory.create (stream, true);
+            // filter socket messages, including a packeting filter
+            stream = factory.tcpSocketCreate(activity, serverAddressPort);
+            if(stream == null){
+                throw new IOException();
             }
 
             // connect
             Log.debug("connecting to server");
-
             setupConnecting();
-            setupTimer();
 
-            socket.connect(serverAddress);
+
 
             //final Toast toast = Toast.makeText(context, "Connected to " + serverAddress.getHostname()
             //        + ":" + serverAddress.getPort(), Toast.LENGTH_SHORT);
             //toast.show();
         } catch (IOException e) {
-            final String errorMessage = "Failed to connect to " + serverAddress.getHostString()
-                    + ":" + serverAddress.getPort();
+            final String errorMessage = "Failed to connect to " + serverAddressPort.getHostString()
+                    + ":" + serverAddressPort.getPort();
             Log.error(errorMessage);
             //final Toast toast = Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT);
             //toast.show();
@@ -157,13 +153,6 @@ public class Client implements EventTarget {
             EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget());
             EventQueue.getInstance().removeHandler(EventType.SOCKET_CONNECT_FAILED, stream.getEventTarget());
         }
-    }
-
-    private void setupTimer() {
-        // TODO
-        //assert (timer == null);
-
-
     }
 
     private void handleConnected() {
