@@ -73,13 +73,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextInputEditText clientNameText;
     EditText outputText;
     CheckBox enable_ssl_checkbox;
-
+    static final String PROP_ENABLE_SSL = "enableSSL";
 
     static {
         System.loadLibrary("inputleap");
     }
 
     void loadElements(){ //Load elements of our activity....
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         startClientBtn = (Button)findViewById(R.id.start_client_button);
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
         //enable_ssl_checkbox = (CheckBox)findViewById(R.id.enable_ssl_checkbox);
         enable_ssl_checkbox = findViewById(R.id.enable_ssl_checkbox);
+        enable_ssl_checkbox.setChecked(preferences.getBoolean(PROP_ENABLE_SSL, true));
     }
 
     void initElements(){ //Initialize elements of our activity with the correct text...
@@ -360,6 +362,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         preferencesEditor.putString(PROP_clientName, name);
         preferencesEditor.putString(PROP_serverURL, url);
         preferencesEditor.putString(PROP_serverPort, Integer.toString(port));
+        preferencesEditor.putBoolean(PROP_ENABLE_SSL, enable_ssl_checkbox.isChecked());
         preferencesEditor.apply();
     }
 
