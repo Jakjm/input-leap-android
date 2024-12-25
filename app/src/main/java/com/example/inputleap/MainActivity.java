@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final static String PROP_clientName = "clientNAME";
     private final static String PROP_serverPort = "serverPORT";
     private final static String PROP_serverURL = "serverURL";
-    private final static String PROP_ENABLE_SSL = "enableSSL";
+    private final static String PROP_enableSSL = "enableSSL";
     public static final int DISCONNECTED = 0;
     public static final int CONNECTING = 1;
     public static final int CONNECTED = 2;
@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ipText = (TextInputEditText)findViewById(R.id.ip_EditText);
         clientNameText = (TextInputEditText)findViewById(R.id.client_name_EditText);
         portText = (TextInputEditText)findViewById(R.id.port_EditText);
-        outputText = (EditText)findViewById(R.id.editTextTextMultiLine);
         enable_ssl_checkbox = (CheckBox)findViewById(R.id.enable_ssl_checkbox);
     }
 
@@ -100,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ipText.setText(preferences.getString(PROP_serverURL,""));
         portText.setText(preferences.getString(PROP_serverPort, "24800"));
         clientNameText.setText(preferences.getString(PROP_clientName, android.os.Build.MODEL));
+        enable_ssl_checkbox.setChecked(preferences.getBoolean(PROP_enableSSL, true));
     }
 
     @Override
@@ -138,34 +138,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    boolean validatePort(int port){
-        return 1 <= port && port <= 65536;
-    }
-    boolean validateIp(String ip) {
-        int firstDot = ip.indexOf('.');
-        int secondDot = ip.indexOf('.', firstDot + 1);
-        int thirdDot = ip.indexOf('.', secondDot + 1);
-        if (firstDot == -1 || secondDot == -1 || thirdDot == -1) {
-            return false;
-        } else if (secondDot - firstDot <= 1 || thirdDot - secondDot <= 1) {
-            return false;
-        }
-        try {
-            int[] bytes = new int[4];
-            bytes[0] = Integer.parseInt(ip.substring(0, firstDot));
-            bytes[1] = Integer.parseInt(ip.substring(firstDot + 1, secondDot));
-            bytes[2] = Integer.parseInt(ip.substring(secondDot + 1, thirdDot));
-            bytes[3] = Integer.parseInt(ip.substring(thirdDot + 1));
-
-            for (int i = 0; i < bytes.length; ++i) {
-                if (bytes[i] < 0 || bytes[i] > 255) return false;
-            }
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
     public void updateConnectionStatus() throws IOException {
         int status = state.get();
         if(status == CONNECTED){
@@ -180,18 +152,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ipText.setEnabled(true);
             portText.setEnabled(true);
             clientNameText.setEnabled(true);
+            enable_ssl_checkbox.setEnabled(true);
             startClientBtn.setText("Start InputLeap Client");
         }
     }
 
 
-    public void updatePreferences(String name, String url, int port){
+    public void updatePreferences(String name, String url, int port, boolean isChecked){
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor preferencesEditor = preferences.edit();
         preferencesEditor.putString(PROP_clientName, name);
         preferencesEditor.putString(PROP_serverURL, url);
         preferencesEditor.putString(PROP_serverPort, Integer.toString(port));
-        preferencesEditor.putBoolean(PROP_ENABLE_SSL, enable_ssl_checkbox.isChecked());
+        preferencesEditor.putBoolean(PROP_enableSSL, isChecked);
         preferencesEditor.apply();
     }
 
@@ -228,42 +201,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ipText.setEnabled(false);
             portText.setEnabled(false);
             clientNameText.setEnabled(false);
-
+            enable_ssl_checkbox.setEnabled(false);
             try {
                 String ip = ipText.getText().toString();
                 int port = Integer.parseInt(portText.getText().toString());
                 String clientName = clientNameText.getText().toString();
-                boolean useTLS = true;
-                if (validateIp(ip) && validatePort(port)) {
-                    updatePreferences(clientName, ip, port);
-                    state.set(CONNECTING);
+                boolean useTLS = enable_ssl_checkbox.isChecked();
 
-                    SocketFactoryInterface socketFactory;
-                    HandshakeCompletedListener listener = new HandshakeCompletedListener() {
-                        public void handshakeCompleted(HandshakeCompletedEvent event) {
-                            state.set(CONNECTED);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    startClientBtn.setEnabled(true);
-                                }
-                            });
-                        }
-                    };
-                    if(useTLS)socketFactory = new TLSSocketFactory(listener);
-                    else socketFactory = new TCPSocketFactory();
-                    //connect();
-                    Client client = createClient(new InetSocketAddress(ip, port), clientName);
-                    Runnable connectTask = new Runnable(){
-                        public void run(){
-                            client.connect(MainActivity.this, socketFactory);
-                        }
-                    };
+                InetSocketAddress addressPort = new InetSocketAddress(ip, port);
+                updatePreferences(clientName, ip, port, useTLS);
+                state.set(CONNECTING);
 
-                    mainLoopThread.start();
-                } else {
-                    throw new Exception();
-                }
+                SocketFactoryInterface socketFactory;
+                HandshakeCompletedListener listener = new HandshakeCompletedListener() {
+                    public void handshakeCompleted(HandshakeCompletedEvent event) {
+                        state.set(CONNECTED);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                startClientBtn.setEnabled(true);
+                            }
+                        });
+                    }
+                };
+                if(useTLS)socketFactory = new TLSSocketFactory(listener);
+                else socketFactory = new TCPSocketFactory();
+                //connect();
+                Client client = createClient(addressPort, clientName);
+                Runnable connectTask = new Runnable(){
+                    public void run(){
+                        client.connect(MainActivity.this, socketFactory);
+                    }
+                };
+                executorService.execute(connectTask);
+                mainLoopThread.start();
             }
             catch(Exception e){
                 //TODO complain that something is incorrect....
@@ -271,54 +242,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ipText.setEnabled(true);
                 portText.setEnabled(true);
                 clientNameText.setEnabled(true);
-
+                enable_ssl_checkbox.setEnabled(true);
             }
 
 
-        }
-    }
-
-    public void onMoveMouseClick(View view) {
-        this.view = view;
-        moveMouseInCircle();
-    }
-
-    private void moveMouseInCircle() {
-        AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
-        if (accessibilityManager.isEnabled()) {
-            Path path = new Path();
-            int centerX = 500; // Center X coordinate
-            int centerY = 500; // Center Y coordinate
-            int radius = 100; // Radius of the circle
-
-            for (int i = 0; i <= 360; i += 10) {
-                double angle = Math.toRadians(i);
-                float x = (float) (centerX + radius * Math.cos(angle));
-                float y = (float) (centerY + radius * Math.sin(angle));
-                if (i == 0) {
-                    path.moveTo(x, y);
-                } else {
-                    path.lineTo(x, y);
-                }
-            }
-
-            GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
-            gestureBuilder.addStroke(new GestureDescription.StrokeDescription(path, 0, 1000));
-            GestureDescription gesture = gestureBuilder.build();
-
-            dispatchGesture(gesture, new AccessibilityService.GestureResultCallback() {
-                @Override
-                public void onCompleted(GestureDescription gestureDescription) {
-                    super.onCompleted(gestureDescription);
-                    // Handle completion
-                }
-
-                @Override
-                public void onCancelled(GestureDescription gestureDescription) {
-                    super.onCancelled(gestureDescription);
-                    // Handle cancellation
-                }
-            }, null);
         }
     }
 
