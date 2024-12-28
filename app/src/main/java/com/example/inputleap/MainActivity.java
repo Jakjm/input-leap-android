@@ -224,7 +224,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 };
                 executorService.execute(connectTask);
-                mainLoopThread.start();
+                mainLoopThread.startNewMainLoopThread();
             }
             catch(Exception e){
                 //TODO complain that something is incorrect....

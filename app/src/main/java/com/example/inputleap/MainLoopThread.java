@@ -18,9 +18,12 @@ public class MainLoopThread extends Thread {
                 Log.note("Event grabbed");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.error("Exception in MainLoopThread");
         } finally {
             // TODO stop the accessibility injection service
+            Log.note("MainLoopThread stopped");
+            stopMainLoopThread();
+
         }
     }
     public void startNewMainLoopThread(){

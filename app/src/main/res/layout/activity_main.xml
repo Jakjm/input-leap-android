@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:text="InputLeap Android Client"
+            android:text="@string/app_name"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textStyle="bold"
             android:typeface="normal" />
@@ -31,7 +31,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:text="Client Name"
+            android:text="@string/client_name"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textStyle="bold" />
 
@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:text="Server IP/URL"
+            android:text="@string/ip_address"
             android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputEditText
@@ -55,14 +55,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:hint="IP of Server" />
+            android:hint="@string/ip_address"
+            />
 
         <TextView
             android:id="@+id/port_label_TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:text="Server Port (Default = 24800)"
+            android:text="@string/server_port"
             android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputEditText
@@ -70,7 +71,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:hint="PortNumber"
+            android:hint="@string/port"
             android:text="24800" />
 
         <CheckBox

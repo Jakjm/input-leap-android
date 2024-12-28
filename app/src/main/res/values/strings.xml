@@ -1,7 +1,12 @@
 <resources>
-    <string name="app_name">InputLeap</string>
+    <string name="app_name">InputLeap Android Client</string>
     <string name="stop_inputleap_client">Stop InputLeap Client</string>
     <string name="connecting_please_wait">Connecting, please wait...</string>
     <string name="enable_tls">Enable SSL/TLS</string>
     <string name="start_inputleap_client">Start InputLeap Client</string>
+    <string name="ip_address">IP Address</string>
+    <string name="port">Port</string>
+    <string name="client_name">Client Name</string>
+    <string name="server_port">Server Port (Default = 24800)</string>
+
 </resources>
