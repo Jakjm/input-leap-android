@@ -142,10 +142,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int status = state.get();
         if(status == CONNECTED){
             startClientBtn.setEnabled(true);
-            startClientBtn.setText("Stop InputLeap Client");
+            startClientBtn.setText(R.string.stop_inputleap_client);
         }
         else if(status == CONNECTING){
-            startClientBtn.setText("Connecting, please wait...");
+            startClientBtn.setText(R.string.connecting_please_wait);
 
         }
         else{
@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             portText.setEnabled(true);
             clientNameText.setEnabled(true);
             enable_ssl_checkbox.setEnabled(true);
-            startClientBtn.setText("Start InputLeap Client");
+            startClientBtn.setText(R.string.start_inputleap_client);
         }
     }
 
@@ -220,11 +220,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Runnable connectTask = new Runnable(){
                     public void run(){
                         client.connect(MainActivity.this, socketFactory);
+                        state.set(CONNECTED);
                     }
                 };
                 executorService.execute(connectTask);
-
-                state.set(CONNECTED);
                 mainLoopThread.start();
             }
             catch(Exception e){

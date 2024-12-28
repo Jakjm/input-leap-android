@@ -27,6 +27,7 @@ import java.net.Socket;
 
 public class TCPSocketFactory implements SocketFactoryInterface{
     private static final int SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000;
+    private static final int SOCKET_IO_TIMEOUT = 20000;
     public TCPSocketFactory() {
 
     }
@@ -37,9 +38,10 @@ public class TCPSocketFactory implements SocketFactoryInterface{
         else return new TCPSocket(socket);
     }
 
-    public Socket create(Activity activity, InetSocketAddress address) {
+    public synchronized Socket create(Activity activity, InetSocketAddress address) {
         try {
             Socket socket = new Socket();
+            socket.setSoTimeout(SOCKET_IO_TIMEOUT);
             socket.connect(address, SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
             return socket;
         }

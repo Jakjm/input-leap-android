@@ -52,7 +52,6 @@ public class InputLeapTrustManager implements X509TrustManager {
         }
     }
     public String getSignature(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
-        //byte[] sigBytes = cert.getSignature();
         byte[] encoded = cert.getEncoded();
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] sigBytes = digest.digest(encoded);
@@ -70,7 +69,7 @@ public class InputLeapTrustManager implements X509TrustManager {
 
     //TODO user should be able to permanently save this certificate....
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws java.security.cert.CertificateException{
-
+        result = RESULT.UNDECIDED;
         for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
             try {

@@ -17,7 +17,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/alata"
+            android:text="InputLeap Android Client"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textStyle="bold"
+            android:typeface="normal" />
         <TextView
             android:id="@+id/client_name_label_TextView"
             android:layout_width="match_parent"
@@ -70,8 +78,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-
-            android:text="Enable SSL/TLS" />
+            android:text="@string/enable_tls" />
 
         <Button
             android:id="@+id/start_client_button"
@@ -79,9 +86,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:inputType="text"
             android:onClick="onClick"
-            android:text="Start InputLeap Client"
+            android:text="@string/start_inputleap_client"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:iconPadding="12dp"
             app:strokeColor="#E91E63" />
@@ -98,16 +104,6 @@
             android:singleLine="false" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:fontFamily="@font/alata"
-        android:text="InputLeap Android Client"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textStyle="bold"
-        android:typeface="normal"
-        tools:layout_editor_absoluteX="80dp"
-        tools:layout_editor_absoluteY="16dp" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
