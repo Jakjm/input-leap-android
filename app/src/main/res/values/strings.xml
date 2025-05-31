@@ -9,4 +9,35 @@
     <string name="client_name">Client Name</string>
     <string name="server_port">Server Port (Default = 24800)</string>
 
+    <!-- Bluetooth Related Strings -->
+    <string name="bluetooth_permission_error_title">Bluetooth Permission Error</string>
+    <string name="bluetooth_permission_error_message_scan_connect">Bluetooth Scan and Connect permissions are required for Bluetooth functionality.</string>
+    <string name="bluetooth_required_title">Bluetooth Required</string>
+    <string name="bluetooth_required_message_not_enabled">Bluetooth was not enabled. Please enable Bluetooth to proceed.</string>
+    <string name="bluetooth_error_title">Bluetooth Error</string>
+    <string name="bluetooth_not_supported_message">Bluetooth is not supported on this device.</string>
+    <string name="bluetooth_required_message_enable_first">Please enable Bluetooth first.</string>
+    <string name="scanning_bluetooth_devices">Scanning for Bluetooth devices...</string>
+    <string name="bluetooth_error_cannot_listen">Could not start listening for Bluetooth devices.</string>
+    <string name="bluetooth_error_discovery_failed">Failed to start Bluetooth device discovery. Check Bluetooth status and permissions.</string>
+    <string name="bluetooth_permission_error_discovery">Permission denied for Bluetooth discovery: </string>
+    <string name="bluetooth_discovery_title">Bluetooth Discovery</string>
+    <string name="bluetooth_no_devices_found">No Bluetooth devices found.</string>
+    <string name="select_bluetooth_device_title">Select Bluetooth Device</string>
+    <string name="connecting_to_device">Connecting to %1$s...</string>
+    <string name="bluetooth_connected_title">Bluetooth Connected</string>
+    <string name="bluetooth_connected_message">Successfully connected to %1$s.\nInput sharing via Bluetooth needs core client integration.</string>
+    <string name="bluetooth_connection_failed_title">Bluetooth Connection Failed</string>
+    <string name="permission_error_message">Permission error: %1$s</string>
+    <string name="could_not_connect_message">Could not connect: %1$s</string>
+
+    <!-- Accessibility Service Related Strings -->
+    <string name="accessibility_service_required_title">Accessibility Service Required</string>
+    <string name="accessibility_service_required_message">InputLeap requires its Accessibility Service to be enabled to control this device. Would you like to enable it now?</string>
+    <string name="enable_now">Enable Now</string>
+    <string name="control_disabled_title">Control Disabled</string>
+    <string name="control_disabled_message_no_service">Device control will not work without the Accessibility Service enabled.</string>
+    <string name="accessibility_service_description">Allows InputLeap to control this device inputs (mouse and keyboard) remotely. This is necessary for the app to function as a remote input client.</string>
+
 </resources>
+

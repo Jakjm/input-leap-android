@@ -9,6 +9,7 @@
 
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="60dp"
@@ -26,60 +27,96 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textStyle="bold"
             android:typeface="normal" />
+
         <TextView
-            android:id="@+id/client_name_label_TextView"
+            android:id="@+id/connection_type_label_TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/alata"
-            android:text="@string/client_name"
+            android:text="Connection Type"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textStyle="bold" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/client_name_EditText"
+        <RadioGroup
+            android:id="@+id/connection_type_RadioGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:hint="Client Name" />
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/ip_label_TextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:text="@string/ip_address"
-            android:textStyle="bold" />
+            <RadioButton
+                android:id="@+id/tcp_ip_RadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TCP/IP"
+                android:checked="true" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ip_EditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:hint="@string/ip_address"
-            />
+            <RadioButton
+                android:id="@+id/bluetooth_RadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bluetooth" />
+        </RadioGroup>
 
-        <TextView
-            android:id="@+id/port_label_TextView"
+        <LinearLayout
+            android:id="@+id/tcp_ip_settings_Layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:text="@string/server_port"
-            android:textStyle="bold" />
+            android:orientation="vertical">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/port_EditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:hint="@string/port"
-            android:text="24800" />
+            <TextView
+                android:id="@+id/client_name_label_TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:text="@string/client_name"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                android:textStyle="bold" />
 
-        <CheckBox
-            android:id="@+id/enable_ssl_checkbox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/alata"
-            android:text="@string/enable_tls" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/client_name_EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:hint="Client Name" />
+
+            <TextView
+                android:id="@+id/ip_label_TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:text="@string/ip_address"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ip_EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:hint="@string/ip_address" />
+
+            <TextView
+                android:id="@+id/port_label_TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:text="@string/server_port"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/port_EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:hint="@string/port"
+                android:text="24800" />
+
+            <CheckBox
+                android:id="@+id/enable_ssl_checkbox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/alata"
+                android:text="@string/enable_tls" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/start_client_button"
@@ -100,11 +137,12 @@
             android:ems="10"
             android:enabled="false"
             android:gravity="start|top"
+            android:hint="@string/app_name"
             android:inputType="textMultiLine"
             android:lines="5"
             android:singleLine="false" />
     </LinearLayout>
 
 
-
 </androidx.constraintlayout.widget.ConstraintLayout>
+
